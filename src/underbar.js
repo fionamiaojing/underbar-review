@@ -364,6 +364,16 @@
   // Calls the method named by functionOrKey on each value in the list.
   // Note: You will need to learn a bit about .apply to complete this.
   _.invoke = function(collection, functionOrKey, args) {
+    if (typeof functionOrKey === 'string') {
+      return _.map(collection, function(ele) {
+        return ele[functionOrKey].apply(ele, args);
+        // why cannot use this in apply
+      });
+    } else {
+      return _.map(collection, function(ele) {
+        return functionOrKey.apply(ele, args);
+      });
+    }
   };
 
   // Sort the object's values by a criterion produced by an iterator.
@@ -371,6 +381,15 @@
   // of that string. For example, _.sortBy(people, 'name') should sort
   // an array of people by their name.
   _.sortBy = function(collection, iterator) {
+
+    return collection.sort(function(a, b) {
+      if (typeof iterator === 'function') {
+        return iterator(a) - iterator(b);
+      } else {
+        return a[iterator] - b[iterator]; 
+      }
+      
+    });
   };
 
   // Zip together two or more arrays with elements of the same index
@@ -379,6 +398,24 @@
   // Example:
   // _.zip(['a','b','c','d'], [1,2,3]) returns [['a',1], ['b',2], ['c',3], ['d',undefined]]
   _.zip = function() {
+    var args = [...arguments];
+    var output = [];
+    var maxLen = _.reduce(args, function(acc, ele) {
+      return Math.max(acc, ele.length);
+    }, 0);
+    for (var i = 0; i < maxLen; i++) {
+      var nestedArray = []
+      for (var j = 0; j < args.length; j++) {
+        if(args[j][i] === undefined) {
+          nestedArray.push(undefined);
+        } else {
+          nestedArray.push(args[j][i]);
+        }
+      }
+      output.push(nestedArray);
+    }
+    
+    return output;
   };
 
   // Takes a multidimensional array and converts it to a one-dimensional array.
@@ -386,16 +423,39 @@
   //
   // Hint: Use Array.isArray to check if something is an array
   _.flatten = function(nestedArray, result) {
+    var output = [];
+    for(var i = 0; i < nestedArray.length;i++) {
+      if(Array.isArray(nestedArray[i])) {
+          output = output.concat(_.flatten(nestedArray[i]));
+      } else {
+        output.push(nestedArray[i]);
+      }
+    }
+    return output; 
   };
 
   // Takes an arbitrary number of arrays and produces an array that contains
   // every item shared between all the passed-in arrays.
   _.intersection = function() {
+    var args = [...arguments];
+    return _.reduce(args,function(acc,cur){
+      acc = _.filter(acc,function(ele){
+        return cur.includes(ele);
+      });
+      return acc;
+    });
   };
 
   // Take the difference between one array and a number of other arrays.
   // Only the elements present in just the first array will remain.
   _.difference = function(array) {
+    var args = [...arguments];
+    return _.reduce(args,function(acc,cur){
+      acc = _.filter(acc,function(ele){
+        return !cur.includes(ele);
+      });
+      return acc;
+    });
   };
 
   // Returns a function, that, when invoked, will only be triggered at most once
@@ -404,5 +464,15 @@
   //
   // Note: This is difficult! It may take a while to implement.
   _.throttle = function(func, wait) {
+
+    var lastCalled;
+    return function(){
+      var currentTime = new Date();
+      if (lastCalled === undefined || currentTime - lastCalled > wait) {
+        func.apply(this, arguments);
+        lastCalled = currentTime;
+      }
+    };
+    
   };
 }());
